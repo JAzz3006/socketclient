@@ -1,4 +1,4 @@
-После создания клиента и сервера создадим докер-файл в корне проекта пишем там что надо.
+После создания клиента и сервера создадим докер-файл в корне проекта пишем там что надо (оно записано в докер-файле).
 Затем, в терминале docker build -t socket-server .  где
   socket-server - имя образа
   . - указывает на текущую директорию
@@ -33,4 +33,20 @@ app.server.host=${SOCKET_SERVER_HOST:localhost}
 app.server.port=${SOCKET_SERVER_PORT:8888}
 это значит, что при наличии переменной среды SOCKET_SERVER_HOST, значение app.server.host
 будет подставляться из этой переменной, а если нет, то подставиться localhost. С портом - аналогично
-Теперь изменим Dockerfile.
+Теперь изменим Dockerfile.(переменные среды)
+После этого удалим все левые контейнеры: docker rm <имя или ID>
+все левые имиджи: docker rmi <имя или ID>
+сформируем новые bootJar для обоих приложений.
+Сделаем имиджи docker build -t socket-server . и docker build -t socket-client .
+Запустим контейнер docker run --rm socket-server
+узнаем его IP docker inspect <ID>
+Запустим клиента docker run --rm -e SOCKET_SERVER_HOST=172.17.0.2 socket-client
+где 172.17.0.2 - это адрес сервера, который мы узнали ч/з inspect
+И все должно заработать.
+Но есть вариант без выяснения IP и вставления его в пусковой конфиг
+В докере есть сущность Network - это изолированная сеть для общения между контейнерами.
+Можно создать именованную сеть и использовать ее в каждом контейнере, которые должны общаться друг с другом
+Создается так: docker network create spring-socket-network - эта команда создает сеть которую можно использовать.
+Например: запускаем сервер: docker run p-p 8888:8888 --rm --name socket-server --network spring-socket-network socket-server
+теперь запустим клиент похожей командой: docker run --rm --name socket-client --network spring-socket-network -e SOCKET_SERVER_HOST=socket-server socket-client
+И все должно работать
